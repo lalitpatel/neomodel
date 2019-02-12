@@ -9,8 +9,8 @@ The following properties are available on nodes and relationships:
 :class:`~neomodel.properties.ArrayProperty`     :class:`~neomodel.properties.JSONProperty`
 :class:`~neomodel.properties.BooleanProperty`   :class:`~neomodel.properties.RegexProperty`
 :class:`~neomodel.properties.DateProperty`      :class:`~neomodel.properties.StringProperty`
-:class:`~neomodel.properties.DateTimeProperty`  :class:`~neomodel.properties.UniqueIdProperty`
-:class:`~neomodel.properties.FloatProperty`
+:class:`~neomodel.properties.DateTimeProperty`  :class:`~neomodel.properties.TimeProperty`
+:class:`~neomodel.properties.FloatProperty`     :class:`~neomodel.properties.UniqueIdProperty`
 ==============================================  ==============================================
 
 
@@ -69,10 +69,13 @@ Neomodel provides the `UniqueIdProperty` to generate unique identifiers for node
 Dates and times
 ===============
 
-The *DateTimeProperty* accepts `datetime.datetime` objects of any timezone and stores them as a UTC epoch value.
-These epoch values are inflated to datetime.datetime objects with the UTC timezone set.
+Neomodel has support for Neo4J Temporal types introduced in Neo4j 3.4.
 
-The *DateProperty* accepts datetime.date objects which are stored as a string property 'YYYY-MM-DD'.
+The *DateTimeProperty* accepts `datetime.datetime` objects of any timezone and deflates back to neotime.DateTime
+
+The *DateProperty* also accepts datetime.date objects and deflates back to neotime.Date
+
+The *TimeProperty* also accepts datetime.date objects and deflates back to neotime.Time
 
 The `default_now` parameter specifies the current time as the default value::
 

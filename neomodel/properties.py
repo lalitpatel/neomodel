@@ -5,8 +5,9 @@ import types
 import re
 import uuid
 import warnings
-from datetime import date, datetime
+from datetime import date, datetime, time
 
+import neotime
 import pytz
 
 from neomodel import config
@@ -424,19 +425,42 @@ class DateProperty(Property):
 
     @validator
     def inflate(self, value):
-        return datetime.strptime(unicode(value), "%Y-%m-%d").date()
+        if not isinstance(value, neotime.Date):
+            raise ValueError("neotime.DateTime expected, got {0} can't inflate to "
+                             "datetime.".format(type(value)))
+        return value.to_native()
 
     @validator
     def deflate(self, value):
         if not isinstance(value, date):
             msg = 'datetime.date object expected, got {0}'.format(repr(value))
             raise ValueError(msg)
-        return value.isoformat()
+        return neotime.Date.from_native(value)
+
+
+class TimeProperty(Property):
+    """
+    Stores a time
+    """
+    form_field_class = 'DateField'
+
+    @validator
+    def inflate(self, value):
+        if not isinstance(value, neotime.Time):
+            raise ValueError("neotime.Time expected, got {0} can't inflate to "
+                             "datetime.".format(type(value)))
+        return value.to_native()
+
+    @validator
+    def deflate(self, value):
+        if not isinstance(value, time):
+            msg = 'datetime.time object expected, got {0}'.format(repr(value))
+            raise ValueError(msg)
+        return neotime.Time.from_native(value)
 
 
 class DateTimeProperty(Property):
-    """ A property representing a :class:`datetime.datetime` object as
-        unix epoch.
+    """ Stores a :class:`datetime.datetime` object
 
         :param default_now: If ``True``, the creation time (UTC) will be used as default.
                             Defaults to ``False``.
@@ -454,26 +478,16 @@ class DateTimeProperty(Property):
 
     @validator
     def inflate(self, value):
-        try:
-            epoch = float(value)
-        except ValueError:
-            raise ValueError("Float or integer expected, got {0} can't inflate to "
+        if not isinstance(value, neotime.DateTime):
+            raise ValueError("neotime.DateTime expected, got {0} can't inflate to "
                              "datetime.".format(type(value)))
-        return datetime.utcfromtimestamp(epoch).replace(tzinfo=pytz.utc)
+        return value.to_native()
 
     @validator
     def deflate(self, value):
         if not isinstance(value, datetime):
             raise ValueError('datetime object expected, got {0}.'.format(type(value)))
-        if value.tzinfo:
-            value = value.astimezone(pytz.utc)
-            epoch_date = datetime(1970, 1, 1, tzinfo=pytz.utc)
-        elif config.FORCE_TIMEZONE:
-            raise ValueError("Error deflating {}: No timezone provided.".format(value))
-        else:
-            # No timezone specified on datetime object.. assuming UTC
-            epoch_date = datetime(1970, 1, 1)
-        return float((value - epoch_date).total_seconds())
+        return neotime.DateTime.from_native(value)
 
 
 class JSONProperty(Property):

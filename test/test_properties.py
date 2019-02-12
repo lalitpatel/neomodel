@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, time
 
 from pytest import mark, raises
 from pytz import timezone
@@ -8,8 +8,8 @@ from neomodel.exceptions import InflateError, DeflateError
 from neomodel.properties import (
     ArrayProperty, IntegerProperty, DateProperty, DateTimeProperty,
     EmailProperty, JSONProperty, NormalProperty, NormalizedProperty,
-    RegexProperty, StringProperty, UniqueIdProperty
-)
+    RegexProperty, StringProperty, UniqueIdProperty,
+    TimeProperty)
 from neomodel.util import _get_node_properties
 
 
@@ -75,8 +75,15 @@ def test_date():
     prop.name = 'foo'
     prop.owner = FooBar
     somedate = date(2012, 12, 15)
-    assert prop.deflate(somedate) == '2012-12-15'
-    assert prop.inflate('2012-12-15') == somedate
+    assert prop.inflate(prop.deflate(somedate)) == somedate
+
+
+def test_time():
+    prop = TimeProperty()
+    prop.name = 'foo'
+    prop.owner = FooBar
+    some_time = time(12, 12, 12)
+    assert prop.inflate(prop.deflate(some_time)) == some_time
 
 
 def test_datetime_exceptions():
@@ -105,6 +112,27 @@ def test_date_exceptions():
     prop.name = 'date'
     prop.owner = FooBar
     faulty = '2012-14-13'
+
+    try:
+        prop.inflate(faulty)
+    except InflateError as e:
+        assert 'inflate property' in str(e)
+    else:
+        assert False, "InflateError not raised."
+
+    try:
+        prop.deflate(faulty)
+    except DeflateError as e:
+        assert 'deflate property' in str(e)
+    else:
+        assert False, "DeflateError not raised."
+
+
+def test_time_exceptions():
+    prop = DateProperty()
+    prop.name = 'date'
+    prop.owner = FooBar
+    faulty = '24:24:24'
 
     try:
         prop.inflate(faulty)
@@ -164,6 +192,7 @@ def test_default_valude_callable_type():
         class Foo(object):
             def __str__(self):
                 return "123"
+
         return Foo()
 
     class DefaultTestValueThree(StructuredNode):
@@ -180,6 +209,7 @@ def test_default_valude_callable_type():
 def test_independent_property_name():
     class TestNode(StructuredNode):
         name_ = StringProperty(db_property="name")
+
     x = TestNode()
     x.name_ = "jim"
     x.save()
@@ -221,7 +251,6 @@ def test_independent_property_name_get_or_create():
 
 @mark.parametrize('normalized_class', (NormalizedProperty, NormalProperty))
 def test_normalized_property(normalized_class):
-
     class TestProperty(normalized_class):
         def normalize(self, value):
             self._called_with = value
@@ -273,7 +302,6 @@ def test_regex_property():
 
 
 def test_email_property():
-
     prop = EmailProperty()
     prop.name = 'email'
     prop.owner = object()
